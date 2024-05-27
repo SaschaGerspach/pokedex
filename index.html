@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokedex</title>
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body onload="renderPokedexIndex()">
     <header><h1>Pokedex</h1></header>
     <section>
-        <div id="content">
-            <div class="singlePokemon">
+        <div id="content" class="content">
+            <!-- <div class="singlePokemon">
                 <div class="indexAndName">
-                    <span>index</span>
-                    <span>name</span>
+                    <span id="pokemonIndex">index</span>
+                    <span id="pokemonName">name</span>
                 </div>
                 <div>
                     <img src="" alt="bild"> 
@@ -22,7 +22,7 @@
                 <div class="art">
                     <div>Art</div>
                     <div></div>
-                </div>
+                </div> -->
             </div>
         </div>
     </section>
