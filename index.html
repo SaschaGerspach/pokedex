@@ -1,30 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="./img/pokeball.png">
     <title>Pokedex</title>
     <script src="script.js" defer></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body onload="renderPokedexIndex()">
-    <header><h1>Pokedex</h1>
-       <div class="generationLink">
-        <a href="#" class="generation-link">Generation 1</a>
-        <a href="#" class="generation-link">Generation 2</a>
-        <a href="#" class="generation-link">Generation 3</a>
-        <a href="#" class="generation-link">Generation 4</a>
-        <a href="#" class="generation-link">Generation 5</a>
-        <a href="#" class="generation-link">Generation 6</a>
-       </div>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body onload="renderPokedexIndex(); preloadPokemonData();">
+    <header>
+      <div>
+        <a href="index.html"><img src="./img/pokemon-logo.png" alt="Pokemon Logo" /></a>
+      </div>
+      <form onsubmit="return false;">
+        <input type="text" id="search" placeholder="Pokemon (mind. 3 letters)" onchange="" minlength="3" required />
+        <button onclick="searchPokemon()">Search</button>
+      </form>
     </header>
     <section>
-        <div id="content" class="content"></div>
-       
+      <div id="content" class="content"></div>
     </section>
     <div id="popup" class="popup" onclick="closePopUp()">
-    
+      <div id="chart"></div>
     </div>
     <footer></footer>
-</body>
+  </body>
 </html>
