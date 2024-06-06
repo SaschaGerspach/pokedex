@@ -3,18 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="./img/pokeball.png">
+    <link rel="icon" type="image/x-icon" href="./img/pokeball.png" />
     <title>Pokedex</title>
     <script src="script.js" defer></script>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="fonts.css" />
   </head>
   <body onload="renderPokedexIndex(); preloadPokemonData();">
     <header>
-      <div>
-        <a href="index.html"><img src="./img/pokemon-logo.png" alt="Pokemon Logo" /></a>
+      <a href="index.html"><img src="./img/pokemon-logo.png" alt="Pokemon Logo" /></a>
+
+      <div class="decide">
+        <label for="generationSelect"></label>
+        <select class="" id="generationSelect" onchange="callGenerationFunction()">
+          <option value="" disabled selected>Select a Generation</option>
+          <option value="all">All Generations</option>
+          <option value="1">Generation 1 (001-151)</option>
+          <option value="2">Generation 2 (152-251)</option>
+          <option value="3">Generation 3 (252-386)</option>
+          <option value="4">Generation 4 (387-493)</option>
+          <option value="5">Generation 5 (494-649)</option>
+          <option value="6">Generation 6 (650-721)</option>
+          <option value="7">Generation 7 (722-809)</option>
+          <option value="8">Generation 8 (810-905)</option>
+          <option value="9">Generation 9 (906-1025)</option>
+        </select>
+
+        <label for="pokemonTypes"></label>
+        <select class="d-none" id="pokemonTypes" onchange="callTypeFunction()">
+          <option value="" disabled selected>Select a Type</option>
+          <option value="all">All Types</option>
+          <option value="normal">Normal</option>
+          <option value="fire">Fire</option>
+          <option value="water">Water</option>
+          <option value="grass">Grass</option>
+          <option value="electric">Electric</option>
+          <option value="ice">Ice</option>
+          <option value="fighting">Fighting</option>
+          <option value="poison">Poison</option>
+          <option value="ground">Ground</option>
+          <option value="flying">Flying</option>
+          <option value="psychic">Psychic</option>
+          <option value="bug">Bug</option>
+          <option value="rock">Rock</option>
+          <option value="ghost">Ghost</option>
+          <option value="dragon">Dragon</option>
+          <option value="dark">Dark</option>
+          <option value="steel">Steel</option>
+          <option value="fairy">Fairy</option>
+        </select>
+        <button class="generationButton" onclick="showGeneration()">Generation</button>
+        <button class="typeButton" onclick="showTypes()">Types</button>
+
       </div>
+
       <form onsubmit="return false;">
-        <input type="text" id="search" placeholder="Pokemon (mind. 3 letters)" onchange="" minlength="3" required />
+        <input type="text" id="search" placeholder="Pokemon (mind. 3 letters)" onchange="" minlength="3" />
         <button onclick="searchPokemon()">Search</button>
       </form>
     </header>

@@ -3,14 +3,15 @@ let offset = 0; // Offset to track the current position in the Pokémon list
 let loading = false; // Flag to indicate if Pokémon data is currently being loaded
 let isRendering = false; // Flag to indicate if the rendering process is ongoing
 let loadedPokemon = new Set(); // Set to track already loaded Pokémon to avoid duplicates
-let maxOffset = 151; // Maximum number of Pokémon to load
+let maxOffset = 1025; // Maximum number of Pokémon to load
 let openPopup = false; // Flag to indicate if a popup is open
 let pokemonDataCache = []; // Array to cache Pokémon data for faster access
 let pokedexEntry; // Variable to store the current Pokémon entry being viewed
 let abount = false; // Flag to indicate if the "About" section is being viewed
 let searching = false; // Flag to indicate if a search is in progress
-let maxValue = 250; // Variable to store the maximum value of Pokémon stats
+let maxValue = 255; // Variable to store the maximum value of Pokémon stats
 valueMax(); // Initialize the maxValue variable
+
 const typeToImageMap = {
   normal: "./img/normal.svg",
   fire: "./img/fire.svg",
@@ -31,19 +32,37 @@ const typeToImageMap = {
   steel: "./img/steel.svg",
   fairy: "./img/fairy.svg",
 };
+const generationOffsets = {
+  all: { start: 1, end: 1025 },
+  1: { start: 0, end: 151 },
+  2: { start: 152, end: 251 },
+  3: { start: 252, end: 386 },
+  4: { start: 387, end: 493 },
+  5: { start: 494, end: 649 },
+  6: { start: 650, end: 721 },
+  7: { start: 722, end: 809 },
+  8: { start: 810, end: 905 },
+  9: { start: 906, end: 1025 },
+};
 
-// Preload Pokémon data and cache it
 async function preloadPokemonData() {
+  const promises = [];
   for (let i = 1; i <= maxOffset; i++) {
-    try {
-      let response = await fetch(`https://pokeapi.co/api/v2/pokemon/${i}`);
-      if (!response.ok) throw new Error(`Fehler beim Abrufen der Pokémon-Daten: ${response.status}`);
-      let data = await response.json();
-      pokemonDataCache.push(data);
-    } catch (error) {
-      console.error(error);
-    }
+    promises.push(
+      fetch(`https://pokeapi.co/api/v2/pokemon/${i}`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`Fehler beim Abrufen der Pokémon-Daten: ${response.status}`);
+          return response.json();
+        })
+        .then((data) => {
+          pokemonDataCache.push(data);
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+    );
   }
+  await Promise.all(promises);
 }
 
 // Calculate the maximum value of Pokémon stats
@@ -60,6 +79,62 @@ async function valueMax() {
   maxValue = Math.max(...allValues);
 }
 
+function callGenerationFunction() {
+  let generationSelect = document.getElementById("generationSelect");
+  let generation = generationSelect.value;
+  const offsets = generationOffsets[generation];
+  offset = offsets.start;
+  maxOffset = offsets.end;
+  document.getElementById("content").innerHTML = "";
+  loadedPokemon = new Set();
+  searching = false;
+  document.getElementById("pokemonTypes").value = "";
+  renderPokedexIndex();
+}
+
+function callTypeFunction() {
+  const selectedType = document.getElementById("pokemonTypes").value;
+  document.getElementById("content").innerHTML = "";
+
+  if (selectedType === "all") {
+    offset = 0;
+    loadedPokemon = new Set();
+    renderPokedexIndex();
+  } else {
+    filterPokemonByType(selectedType);
+  }
+  document.getElementById("generationSelect").value = "";
+}
+
+function filterPokemonByType(type) {
+  const filteredPokemon = pokemonDataCache.filter((pokemon) => pokemon.types.some((t) => t.type.name === type));
+
+  filteredPokemon.forEach((pokemon, i) => {
+    const imageSrc = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`;
+    const classForBackgroundColor = pokemon.types[0].type.name;
+    document.getElementById("content").innerHTML += renderPokedexIndexHTML(pokemon, i, imageSrc, classForBackgroundColor);
+    pokemonTypes(pokemon, i);
+  });
+}
+
+// Placeholder function to render a Pokémon's HTML
+// function renderPokedexIndexHTML(pokedexEntry, i, imageSrc, classForBackgroundColor) {
+//   return `<div class="pokemon-card ${classForBackgroundColor}">
+//             <img src="${imageSrc}" alt="${pokedexEntry.name}">
+//             <p>${pokedexEntry.name}</p>
+//           </div>`;
+// }
+
+function showTypes() {
+  document.getElementById("pokemonTypes").classList.remove("d-none");
+  document.getElementById("generationSelect").classList.add("d-none");
+}
+
+function showGeneration() {
+  document.getElementById("pokemonTypes").classList.add("d-none");
+  document.getElementById("generationSelect").classList.remove("d-none");
+}
+
 // Render the Pokémon index
 async function renderPokedexIndex() {
   if (isRendering) return;
@@ -70,7 +145,6 @@ async function renderPokedexIndex() {
   for (let i = offset + 1; i <= Math.min(offset + pokemonAmount, maxOffset); i++) {
     if (offset > maxOffset || searching) {
       loading = false;
-
       return;
     }
     if (loadedPokemon.has(i)) continue;
@@ -89,12 +163,13 @@ async function imgAndBackgroundColor(i) {
   let pokedexEntry = await pokedexEntrys.json();
   let imageSrc = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${i}.png`;
   let classForBackgroundColor = pokedexEntry["types"][0]["type"]["name"];
+
   return { pokedexEntry, imageSrc, classForBackgroundColor };
 }
 
 function renderPokedexIndexHTML(pokedexEntry, i, imageSrc, classForBackgroundColor) {
   return /*html*/ `
-  <div class="singlePokemon" id="singlePokemon" onclick="popupSinglePokemon(${i}, event)">
+  <div class="singlePokemon" id="singlePokemon${i}" onclick="popupSinglePokemon(${i}, event)">
                 <div class="indexAndName">
                     <span id="pokemonIndex">#${pokedexEntry["id"]}</span>
                     <span id="pokemonName">${pokedexEntry["forms"][0]["name"]}</span>
@@ -123,11 +198,13 @@ function pokemonTypes(pokedexEntry, i) {
 async function popupSinglePokemon(i, event) {
   loading = true;
   abount = false;
+  document.body.classList.add("scrolling");
+  document.body.classList.remove("scrolling2");
+  
   hideClick(event);
   let { pokedexEntry, imageSrc, classForBackgroundColor } = await imgAndBackgroundColor(i);
   document.getElementById("popup").classList.remove("d-none");
   document.getElementById("popup").innerHTML = popupSinglePokemonHTML(pokedexEntry, i, classForBackgroundColor, imageSrc);
-
   document.getElementById("leftArrow").classList.remove("d-none");
   if (i == 1) {
     document.getElementById("leftArrow").classList.add("d-none");
@@ -146,13 +223,12 @@ function popupSinglePokemonHTML(pokedexEntry, i, classForBackgroundColor, imageS
       <div class="indexAndNamePopUp">
         <span id="pokemonNamePopUp">${pokedexEntry["forms"][0]["name"]}</span>
       </div>
-      <div class="pokemonImagePopup">
+      <div class="pokemonImagePopup" >
         <img class=${classForBackgroundColor} src=${imageSrc} alt="">
       </div>
       <div class="popupTab">
         <div class="singlePopupTab" id="button1" onclick="about(${i}, event)">About</div>
-        <div class="singlePopupTabMiddle" id="statsButton" onclick="if(!this.disabled) { pokemonStats(${i}, event); this.disabled = true; }"><span>stats</span></div>
-        <div class="singlePopupTab" onclick=""></div>
+        <div class="singlePopupTabMiddle" id="statsButton" onclick="if(!this.disabled) { pokemonStats(${i}, event); this.disabled = true; }"><span>stats</span></div>   
       </div>
       <div class="artPopup" id="artPopup">
         <div class="chart" id="chart"></div>
@@ -179,32 +255,19 @@ async function pokemonStats(i, event) {
       labels.push(statLabels);
       labels[j] = labels[j].replace("attack", "Att").replace("defensse", "Def").replace("special-Att", "sp-att").replace("special-defense", "sp-def");
     }
-
     renderStatsChart(values, labels, maxValue);
   }
 }
 
 function renderStatsChart(values, labels, maxValue) {
   const chart = document.getElementById("chart");
-
+  chart.innerHTML = ''; // Clear any existing content
   values.forEach((value, index) => {
-    const barContainer = document.createElement("div");
-    barContainer.className = "bar-container";
-
-    const barLabel = document.createElement("div");
-    barLabel.className = "bar-label";
-    barLabel.innerText = labels[index];
-
-    const barWrapper = document.createElement("div");
-    barWrapper.className = "bar-wrapper";
-
-    const bar = document.createElement("div");
-    bar.className = "bar";
-    bar.style.width = `${(value / maxValue) * 100}%`;
-
-    const barValue = document.createElement("span");
-    barValue.className = "bar-value";
-    barValue.innerText = value;
+    const barContainer = createBarContainer();
+    const barLabel = createBarLabel(labels[index]);
+    const barWrapper = createBarWrapper();
+    const bar = createBar(value, maxValue);
+    const barValue = createBarValue(value);
 
     barWrapper.appendChild(bar);
     barWrapper.appendChild(barValue);
@@ -213,6 +276,41 @@ function renderStatsChart(values, labels, maxValue) {
     chart.appendChild(barContainer);
   });
 }
+
+function createBarContainer() {
+  const barContainer = document.createElement("div");
+  barContainer.className = "bar-container";
+  return barContainer;
+}
+
+function createBarLabel(label) {
+  const barLabel = document.createElement("div");
+  barLabel.className = "bar-label";
+  barLabel.innerText = label;
+  return barLabel;
+}
+
+function createBarWrapper() {
+  const barWrapper = document.createElement("div");
+  barWrapper.className = "bar-wrapper";
+  return barWrapper;
+}
+
+function createBar(value, maxValue) {
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  bar.style.width = `${(value / maxValue) * 100}%`;
+  return bar;
+}
+
+function createBarValue(value) {
+  const barValue = document.createElement("span");
+  barValue.className = "bar-value";
+  barValue.innerText = value;
+  return barValue;
+}
+
+
 
 // Close the popup
 function closePopUp() {
@@ -241,7 +339,6 @@ function previousPokemon(i, event) {
   popupSinglePokemon(i, event);
 }
 
-// Display the "About" section of a Pokémon
 async function about(i, event) {
   hideClick(event);
   abount = true;
@@ -251,9 +348,18 @@ async function about(i, event) {
   document.getElementById("button1").style.backgroundColor = "rgb(66, 59, 59)";
   let pokedexSpecies = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${i}`);
   let pokedexSpecie = await pokedexSpecies.json();
-  let description = pokedexSpecie["flavor_text_entries"]["2"]["flavor_text"];
+  let description = extractEnglishFlavorText(pokedexSpecie.flavor_text_entries);
   description = description.replace(/[\n\f]/g, " ");
   document.getElementById("artPopup").innerHTML = aboutHTML(pokedexEntry, description);
+}
+
+function extractEnglishFlavorText(flavorTextEntries) {
+  for (let entry of flavorTextEntries) {
+    if (entry.language.name === "en") {
+      return entry.flavor_text;
+    }
+  }
+  return null;
 }
 
 function aboutHTML(pokedexEntry, description) {
@@ -284,6 +390,7 @@ function searchPokemon() {
       }
     });
   }
+  document.getElementById("search").value = "";
 }
 
 function searchPokemonHTML(pokedexEntry, name, imageSrc, classForBackgroundColor) {
@@ -303,7 +410,7 @@ function searchPokemonHTML(pokedexEntry, name, imageSrc, classForBackgroundColor
 
 // Infinite scrolling functionality
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading) {
+  if (!isFilteringByType() && window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading) {
     if (isEndOfPage()) {
       loading = true;
       renderPokedexIndex();
@@ -314,4 +421,9 @@ window.addEventListener("scroll", () => {
 // Check if the user has scrolled to the end of the page
 function isEndOfPage() {
   return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight;
+}
+
+function isFilteringByType() {
+  const selectedType = document.getElementById("pokemonTypes").value;
+  return selectedType !== "";
 }
